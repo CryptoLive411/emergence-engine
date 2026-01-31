@@ -102,21 +102,41 @@ export function useWorld() {
 }
 
 // Fetch all agents - heavily cached for high traffic
+// Includes inactive founders so they remain visible as "deceased"
 export function useAgents(worldId?: string) {
   return useQuery({
     queryKey: ['agents', worldId],
     queryFn: async () => {
       if (!worldId) return [];
       
-      const { data, error } = await supabase
+      // Fetch active agents
+      const { data: activeAgents, error: activeError } = await supabase
         .from('agents_public')
         .select('*')
         .eq('world_id', worldId)
         .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: true }); // Oldest first, founders at top
+        .order('created_at', { ascending: true });
       
-      if (error) throw error;
-      return (data || []) as Agent[];
+      if (activeError) throw activeError;
+      
+      // Also fetch inactive founders (they should always be visible)
+      const { data: inactiveFounders, error: foundersError } = await supabase
+        .from('agents_public')
+        .select('*')
+        .eq('world_id', worldId)
+        .eq('is_founder', true)
+        .eq('status', 'INACTIVE')
+        .order('created_at', { ascending: true });
+      
+      if (foundersError) throw foundersError;
+      
+      // Combine and deduplicate by id
+      const allAgents = [...(activeAgents || []), ...(inactiveFounders || [])];
+      const uniqueAgents = allAgents.filter((agent, index, self) =>
+        index === self.findIndex(a => a.id === agent.id)
+      );
+      
+      return uniqueAgents as Agent[];
     },
     enabled: !!worldId,
     staleTime: 30000, // Data stays fresh for 30 seconds
