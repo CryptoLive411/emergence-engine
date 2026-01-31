@@ -54,8 +54,9 @@ export function useWorldStats(worldId?: string) {
       };
     },
     enabled: !!worldId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 30000, // Refresh every 30 seconds to keep stats accurate
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Auto-refresh disabled for stability
+    refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
