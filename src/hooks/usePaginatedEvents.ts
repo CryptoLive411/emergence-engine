@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,7 +27,7 @@ export function usePaginatedEvents(worldId?: string) {
   const [hasMore, setHasMore] = useState(true);
 
   // Fetch initial page
-  const { isLoading, error, refetch } = useQuery({
+  const { isLoading, error, refetch, data: cachedEvents } = useQuery({
     queryKey: ['paginated-events', worldId, 'initial'],
     queryFn: async () => {
       if (!worldId) return [];
@@ -57,6 +57,17 @@ export function usePaginatedEvents(worldId?: string) {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  // Restore state from cache when component remounts (fixes navigation bug)
+  useEffect(() => {
+    if (cachedEvents && cachedEvents.length > 0 && allEvents.length === 0) {
+      setAllEvents(cachedEvents);
+      setHasMore(cachedEvents.length === PAGE_SIZE);
+      if (cachedEvents.length > 0) {
+        setCursor(cachedEvents[cachedEvents.length - 1].created_at);
+      }
+    }
+  }, [cachedEvents, allEvents.length]);
 
   // Load more function
   const loadMore = useCallback(async () => {
