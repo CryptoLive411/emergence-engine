@@ -141,35 +141,10 @@ function WorldSummaryComponent() {
   return (
     <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <span>The Story So Far</span>
-          </CardTitle>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchSummary(true)}
-            disabled={isRefreshing}
-            className={cn(
-              "h-8 px-3 text-xs font-mono gap-1.5",
-              "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {isRefreshing ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Updating...</span>
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-3 h-3" />
-                <span>Refresh</span>
-              </>
-            )}
-          </Button>
-        </div>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <BookOpen className="w-5 h-5 text-primary" />
+          <span>The Story So Far</span>
+        </CardTitle>
         
         {/* Stats row */}
         {summaryData && (
@@ -197,12 +172,9 @@ function WorldSummaryComponent() {
           <Clock className="w-3 h-3" />
           {summaryData?.generatedAt && (
             <span>
-              Updated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
+              Generated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
             </span>
           )}
-          <span className="text-muted-foreground/70 ml-2">
-            • Click refresh to update manually
-          </span>
         </div>
       </CardContent>
     </Card>

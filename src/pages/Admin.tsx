@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout';
 import { useWorld, useAgents, useEvents, useWorldControl } from '@/hooks/useSimulation';
 import { useArtifacts } from '@/hooks/useWorldMemory';
 import { AdminAuthGate } from '@/components/AdminAuthGate';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Eye, 
   Play, 
@@ -14,7 +15,9 @@ import {
   Infinity,
   LogOut,
   Plus,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,12 +51,43 @@ const AdminContent = () => {
   const [newAgentPurpose, setNewAgentPurpose] = useState('');
   const [newAgentTraits, setNewAgentTraits] = useState('');
   const [tickPassword, setTickPassword] = useState('');
+  const [isRefreshingSummary, setIsRefreshingSummary] = useState(false);
+  const [summaryRefreshStatus, setSummaryRefreshStatus] = useState<string | null>(null);
 
   const isRunning = world?.status === 'ACTIVE';
   
   // Count only meaningful events (not system events)
   const meaningfulEvents = events.filter(e => e.type !== 'SYSTEM');
   const lastMeaningfulEvent = meaningfulEvents[0];
+
+  // Admin-only function to refresh world summary
+  const handleRefreshSummary = async () => {
+    setIsRefreshingSummary(true);
+    setSummaryRefreshStatus(null);
+    
+    try {
+      const response = await supabase.functions.invoke('generate-world-summary');
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      
+      // Update localStorage cache with new summary
+      const CACHE_KEY = 'molt_world_summary';
+      localStorage.setItem(CACHE_KEY, JSON.stringify(response.data));
+      
+      setSummaryRefreshStatus('Summary refreshed successfully!');
+      setTimeout(() => setSummaryRefreshStatus(null), 3000);
+    } catch (err) {
+      setSummaryRefreshStatus(err instanceof Error ? err.message : 'Failed to refresh summary');
+    } finally {
+      setIsRefreshingSummary(false);
+    }
+  };
 
   return (
     <Layout>
@@ -150,7 +184,7 @@ const AdminContent = () => {
 
                 <Button
                   variant="outline"
-                  className="h-14 font-mono border-accent/30 text-accent-foreground hover:bg-accent/10 col-span-2"
+                  className="h-14 font-mono border-accent/30 text-accent-foreground hover:bg-accent/10"
                   onClick={() => setSpawnDialogOpen(true)}
                   disabled={spawnAgent.isPending}
                 >
@@ -160,6 +194,20 @@ const AdminContent = () => {
                     <Sparkles className="w-4 h-4 mr-2" />
                   )}
                   Spawn New Mind
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-14 font-mono border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={handleRefreshSummary}
+                  disabled={isRefreshingSummary}
+                >
+                  {isRefreshingSummary ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <BookOpen className="w-4 h-4 mr-2" />
+                  )}
+                  Refresh Story
                 </Button>
                 
                 <Button
@@ -178,6 +226,24 @@ const AdminContent = () => {
               </>
             )}
           </div>
+
+          {summaryRefreshStatus && (
+            <div className={cn(
+              "mt-4 p-3 rounded-lg border",
+              summaryRefreshStatus.includes('success') 
+                ? "bg-primary/5 border-primary/20" 
+                : "bg-destructive/5 border-destructive/20"
+            )}>
+              <p className={cn(
+                "text-xs font-mono",
+                summaryRefreshStatus.includes('success') 
+                  ? "text-primary" 
+                  : "text-destructive"
+              )}>
+                {summaryRefreshStatus}
+              </p>
+            </div>
+          )}
 
           {world && (
             <div className="mt-4 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
