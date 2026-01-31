@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -11,8 +11,10 @@ import {
   ScrollText, 
   Swords,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import { ChronicleCategory, CHRONICLE_CATEGORIES } from '@/data/chronicleTypes';
+import { ShareButton } from './ShareButton';
 
 interface ChronicleEntryLiteProps {
   entry: {
@@ -21,6 +23,7 @@ interface ChronicleEntryLiteProps {
     timestamp: Date;
     category: ChronicleCategory;
     description: string;
+    humanSummary?: string;
     involvedAgents?: { id: string; name: string }[];
   };
 }
@@ -62,6 +65,7 @@ const categoryTextColors: Record<ChronicleCategory, string> = {
 function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
   const Icon = categoryIcons[entry.category];
   const config = CHRONICLE_CATEGORIES[entry.category];
+  const [showOriginal, setShowOriginal] = useState(false);
   
   // Detect conflict indicators in content
   const conflictTag = useMemo(() => {
@@ -112,10 +116,16 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
           </div>
         </div>
         
-        {/* Timestamp */}
-        <time className="text-[10px] font-mono text-muted-foreground shrink-0">
-          {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
-        </time>
+        {/* Timestamp and Share */}
+        <div className="flex items-center gap-2 shrink-0">
+          <time className="text-[10px] font-mono text-muted-foreground">
+            {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
+          </time>
+          <ShareButton 
+            title={entry.title}
+            description={entry.humanSummary || entry.description}
+          />
+        </div>
       </header>
 
       {/* Conflict tag if detected */}
@@ -128,10 +138,40 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
         </div>
       )}
 
-      {/* Description - always fully expanded */}
-      <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap pl-10">
-        {entry.description}
-      </p>
+      {/* Description - Human summary by default, toggle to original */}
+      <div className="pl-10">
+        {entry.humanSummary && !showOriginal ? (
+          <>
+            {/* Human-readable summary */}
+            <p className="text-foreground text-sm leading-relaxed font-medium mb-2">
+              {entry.humanSummary}
+            </p>
+            <button
+              onClick={() => setShowOriginal(true)}
+              className="inline-flex items-center gap-1 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>See poetic version</span>
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Original poetic description */}
+            <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap mb-2">
+              {entry.description}
+            </p>
+            {entry.humanSummary && (
+              <button
+                onClick={() => setShowOriginal(false)}
+                className="inline-flex items-center gap-1 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>See human translation</span>
+              </button>
+            )}
+          </>
+        )}
+      </div>
       
       {/* Involved entities */}
       {entry.involvedAgents && entry.involvedAgents.length > 0 && (

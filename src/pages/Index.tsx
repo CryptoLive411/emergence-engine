@@ -46,6 +46,7 @@ const Index = () => {
         timestamp: new Date(event.created_at),
         category: mapEventToCategory(event.type, event.metadata as Record<string, any>),
         description: event.content,
+        humanSummary: event.human_summary,
         involvedAgents: agent ? [{ id: agent.id, name: agent.name }] : [],
         witnessed: 0,
       };
