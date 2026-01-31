@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Agents from "./pages/Agents";
 import AgentProfile from "./pages/AgentProfile";
@@ -24,34 +25,36 @@ const MAINTENANCE_MODE = false;
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        {MAINTENANCE_MODE ? (
-          <Routes>
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<Maintenance />} />
-          </Routes>
-        ) : (
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/agents" element={<Agents />} />
-            <Route path="/agents/:id" element={<AgentProfile />} />
-            <Route path="/briefings" element={<Briefings />} />
-            <Route path="/briefings/:id" element={<BriefingDetail />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/lineage" element={<Lineage />} />
-            <Route path="/museum" element={<Museum />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        )}
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          {MAINTENANCE_MODE ? (
+            <Routes>
+              <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<Maintenance />} />
+            </Routes>
+          ) : (
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/agents" element={<Agents />} />
+              <Route path="/agents/:id" element={<AgentProfile />} />
+              <Route path="/briefings" element={<Briefings />} />
+              <Route path="/briefings/:id" element={<BriefingDetail />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/lineage" element={<Lineage />} />
+              <Route path="/museum" element={<Museum />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          )}
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
