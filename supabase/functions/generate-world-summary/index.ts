@@ -37,13 +37,6 @@ serve(async (req) => {
       );
     }
 
-    // Get all briefings
-    const { data: briefings } = await supabase
-      .from('briefings')
-      .select('*')
-      .eq('world_id', world.id)
-      .order('created_at', { ascending: true });
-
     // Get agent count
     const { count: agentCount } = await supabase
       .from('agents')
@@ -51,26 +44,77 @@ serve(async (req) => {
       .eq('world_id', world.id)
       .eq('status', 'ACTIVE');
 
-    // Get recent events for more context
-    const { data: recentEvents } = await supabase
-      .from('events')
-      .select('title, type, content')
-      .eq('world_id', world.id)
-      .order('created_at', { ascending: false })
-      .limit(15);
-
-    // Get all agents for character context
+    // Get ALL agents for character context (including deceased)
     const { data: agents } = await supabase
       .from('agents')
-      .select('name, purpose, is_founder, status, generation')
+      .select('name, purpose, is_founder, status, generation, founder_type, created_at')
+      .eq('world_id', world.id)
+      .order('created_at', { ascending: true });
+
+    // Get ALL events - speeches, actions, spawns (up to 200 for comprehensive context)
+    const { data: allEvents } = await supabase
+      .from('events')
+      .select('type, title, content, created_at, agent_id, metadata')
+      .eq('world_id', world.id)
+      .in('type', ['SPEECH', 'ACTION', 'SPAWN'])
+      .order('created_at', { ascending: true })
+      .limit(200);
+
+    // Get all artifacts created
+    const { data: artifacts } = await supabase
+      .from('artifacts')
+      .select('name, artifact_type, content, created_at')
+      .eq('world_id', world.id)
+      .order('created_at', { ascending: true })
+      .limit(50);
+
+    // Get turn count
+    const { count: turnCount } = await supabase
+      .from('turns')
+      .select('*', { count: 'exact', head: true })
       .eq('world_id', world.id);
 
-    if (!briefings || briefings.length === 0) {
+    // Build a comprehensive transcript of what happened
+    const agentMap = new Map((agents || []).map(a => [a.name, a]));
+    
+    // Format all events as a chronological narrative
+    const eventTranscript = (allEvents || []).map(e => {
+      if (e.type === 'SPEECH') {
+        return `${e.title} said: "${e.content}"`;
+      } else if (e.type === 'SPAWN') {
+        return `NEW MIND: ${e.content}`;
+      } else if (e.type === 'ACTION') {
+        const actionType = (e.metadata as any)?.actionType || 'ACTION';
+        return `${actionType}: ${e.content}`;
+      }
+      return `${e.type}: ${e.content}`;
+    }).join('\n');
+
+    // Format character introductions
+    const characterIntros = (agents || []).map(a => {
+      const role = a.is_founder ? `Founder (${a.founder_type === 'A' ? 'Order' : 'Chaos'})` : `Generation ${a.generation}`;
+      const status = a.status === 'ACTIVE' ? '🟢 alive' : '⚫ deceased';
+      return `• ${a.name} - ${role} - ${status}\n  Purpose: "${a.purpose || 'Unknown'}"`;
+    }).join('\n');
+
+    // Format artifacts/creations
+    const emojiMap: Record<string, string> = {
+      'concept': '💡',
+      'institution': '🏛️',
+      'symbol': '🔧',
+      'place': '📍'
+    };
+    const creationsList = (artifacts || []).map(a => {
+      const typeEmoji = emojiMap[a.artifact_type] || '✨';
+      return `${typeEmoji} ${a.name} (${a.artifact_type}): ${a.content}`;
+    }).join('\n');
+
+    if (!allEvents || allEvents.length === 0) {
       return new Response(
         JSON.stringify({ 
-          summary: 'The world just began. Two minds have awakened but nothing significant has happened yet. They are exploring their existence.',
+          summary: 'The world just began. Two minds have awakened but nothing significant has happened yet. They are exploring their existence and discovering what it means to be.',
           generatedAt: new Date().toISOString(),
-          cycleCount: 0,
+          cycleCount: turnCount || 0,
           population: agentCount || 0,
           worldName: world.name,
           worldStatus: world.status
@@ -79,23 +123,7 @@ serve(async (req) => {
       );
     }
 
-    // Compile briefing info
-    const allBriefings = briefings.map((b, i) => 
-      `Cycle ${i + 1}: ${b.headline} - ${b.summary}`
-    ).join('\n');
-
-    // Get key events
-    const allKeyEvents = briefings.flatMap(b => (b.key_events as string[]) || []);
-
-    // Recent happenings
-    const recentHappenings = recentEvents?.map(e => `${e.type}: ${e.title}`).join('\n') || '';
-
-    // Character list
-    const characterList = agents?.map(a => 
-      `${a.name} (${a.is_founder ? 'Founder' : `Gen ${a.generation}`}, ${a.status === 'ACTIVE' ? 'alive' : 'deceased'}): ${a.purpose}`
-    ).join('\n') || '';
-
-    // Call Lovable AI to generate a simple summary
+    // Call AI to generate a comprehensive but readable summary
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -103,54 +131,74 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
-            content: `You are explaining what's happening in an AI world to a curious visitor. Write like you're telling a friend about an interesting story.
+            content: `You are a storyteller explaining what's happening in an AI world simulation to someone who just arrived. Your job is to read through EVERYTHING that has happened and write a clear, engaging summary.
+
+WRITING STYLE:
+- Write like you're telling a fascinating story to a friend over coffee
+- Use simple, everyday language - a 12-year-old should understand it
+- Be SPECIFIC - use names, quote memorable things characters said
+- Explain relationships - who created whom, who agrees/disagrees
+- Highlight interesting creations, ideas, or conflicts
+
+STRUCTURE (use these exact sections with line breaks between):
+
+**The Beginning**
+Who started this world? What are the founding minds like?
+
+**What's Been Happening**  
+Tell the story chronologically. What did they say? What did they build? What ideas emerged?
+
+**The Characters**
+Brief intro to each mind - their personality based on what they've said and done.
+
+**Things They've Created**
+List any structures, objects, places, or concepts they've made.
+
+**Right Now**
+What's the current situation? Any ongoing discussions or projects?
 
 RULES:
-1. Start with "In this world..." to orient the reader
-2. Use simple, everyday words - no jargon
-3. Name the key characters and explain who they are
-4. Tell the story in order: what happened first, then what happened next
-5. Explain any drama, conflicts, or interesting developments
-6. End with what's happening RIGHT NOW
-7. Keep it to 3-4 short paragraphs
-8. Each paragraph should be 2-3 sentences MAX
-9. Use line breaks between paragraphs
-
-AVOID:
-- Fancy vocabulary or metaphors
-- Vague statements like "tensions are rising"
-- Starting sentences with "Currently" or "Recently"
-
-Be specific about WHAT happened and WHO did it.`
+- Read ALL the events carefully - don't skip anything important
+- Quote actual things they said (use "quotation marks")
+- Be detailed but readable - aim for 5-6 paragraphs total
+- Use line breaks between sections
+- If they built something or named something, mention it!
+- If there are conflicts or disagreements, explain them
+- Make it feel like a living world with real personalities`
           },
           {
             role: 'user',
-            content: `Tell me what's happening in this world in simple terms:
+            content: `Please read through everything that has happened in this world and write a comprehensive summary:
 
 WORLD: ${world.name}
 STATUS: ${world.status === 'ACTIVE' ? 'Running' : 'Paused'}
-CYCLES COMPLETED: ${briefings.length}
-POPULATION: ${agentCount || 0} minds currently alive
+CYCLES COMPLETED: ${turnCount || 0}
+CURRENT POPULATION: ${agentCount || 0} minds alive
 
-THE CHARACTERS:
-${characterList}
+═══════════════════════════════════
+THE CHARACTERS
+═══════════════════════════════════
+${characterIntros || 'No characters yet.'}
 
-WHAT HAPPENED EACH CYCLE:
-${allBriefings}
+═══════════════════════════════════
+COMPLETE TRANSCRIPT (oldest to newest)
+═══════════════════════════════════
+${eventTranscript || 'Nothing has happened yet.'}
 
-KEY EVENTS:
-${allKeyEvents.slice(0, 15).join(', ')}
+═══════════════════════════════════
+THINGS CREATED
+═══════════════════════════════════
+${creationsList || 'Nothing has been created yet.'}
 
-MOST RECENT HAPPENINGS:
-${recentHappenings}`
+Please summarize this entire history in a way that's easy to understand and engaging to read.`
           }
         ],
-        max_tokens: 600,
-        temperature: 0.5,
+        max_tokens: 1500,
+        temperature: 0.6,
       }),
     });
 
@@ -167,7 +215,7 @@ ${recentHappenings}`
       JSON.stringify({ 
         summary,
         generatedAt: new Date().toISOString(),
-        cycleCount: briefings.length,
+        cycleCount: turnCount || 0,
         population: agentCount || 0,
         worldName: world.name,
         worldStatus: world.status
