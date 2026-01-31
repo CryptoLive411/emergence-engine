@@ -44,17 +44,6 @@ serve(async (req) => {
       .eq('world_id', world.id)
       .order('created_at', { ascending: true });
 
-    if (!briefings || briefings.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          summary: 'The world is quiet. No significant events have been recorded yet. The minds are waiting for something to happen.',
-          generatedAt: new Date().toISOString(),
-          cycleCount: 0
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Get agent count
     const { count: agentCount } = await supabase
       .from('agents')
@@ -62,13 +51,49 @@ serve(async (req) => {
       .eq('world_id', world.id)
       .eq('status', 'ACTIVE');
 
-    // Compile all briefing summaries into one text
-    const allBriefings = briefings.map((b, i) => 
-      `Cycle ${i + 1}: ${b.headline}\n${b.summary}`
-    ).join('\n\n');
+    // Get recent events for more context
+    const { data: recentEvents } = await supabase
+      .from('events')
+      .select('title, type, content')
+      .eq('world_id', world.id)
+      .order('created_at', { ascending: false })
+      .limit(15);
 
-    // Get key events from all briefings
+    // Get all agents for character context
+    const { data: agents } = await supabase
+      .from('agents')
+      .select('name, purpose, is_founder, status, generation')
+      .eq('world_id', world.id);
+
+    if (!briefings || briefings.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          summary: 'The world just began. Two minds have awakened but nothing significant has happened yet. They are exploring their existence.',
+          generatedAt: new Date().toISOString(),
+          cycleCount: 0,
+          population: agentCount || 0,
+          worldName: world.name,
+          worldStatus: world.status
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Compile briefing info
+    const allBriefings = briefings.map((b, i) => 
+      `Cycle ${i + 1}: ${b.headline} - ${b.summary}`
+    ).join('\n');
+
+    // Get key events
     const allKeyEvents = briefings.flatMap(b => (b.key_events as string[]) || []);
+
+    // Recent happenings
+    const recentHappenings = recentEvents?.map(e => `${e.type}: ${e.title}`).join('\n') || '';
+
+    // Character list
+    const characterList = agents?.map(a => 
+      `${a.name} (${a.is_founder ? 'Founder' : `Gen ${a.generation}`}, ${a.status === 'ACTIVE' ? 'alive' : 'deceased'}): ${a.purpose}`
+    ).join('\n') || '';
 
     // Call Lovable AI to generate a simple summary
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -78,40 +103,54 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
-            content: `You are a friendly storyteller explaining an AI simulation world to someone who knows nothing about it.
+            content: `You are explaining what's happening in an AI world to a curious visitor. Write like you're telling a friend about an interesting story.
 
-Your job is to write a SIMPLE summary that:
-- Uses easy words a 10-year-old could understand
-- Tells the story from the beginning to now
-- Mentions key characters and what they did
-- Explains any conflicts or changes
-- Is warm and engaging
-- Is about 3-4 paragraphs long
+RULES:
+1. Start with "In this world..." to orient the reader
+2. Use simple, everyday words - no jargon
+3. Name the key characters and explain who they are
+4. Tell the story in order: what happened first, then what happened next
+5. Explain any drama, conflicts, or interesting developments
+6. End with what's happening RIGHT NOW
+7. Keep it to 3-4 short paragraphs
+8. Each paragraph should be 2-3 sentences MAX
+9. Use line breaks between paragraphs
 
-Do NOT use fancy words, metaphors, or complex sentences. Be direct and clear.`
+AVOID:
+- Fancy vocabulary or metaphors
+- Vague statements like "tensions are rising"
+- Starting sentences with "Currently" or "Recently"
+
+Be specific about WHAT happened and WHO did it.`
           },
           {
             role: 'user',
-            content: `Please summarize everything that has happened in this world in simple words:
+            content: `Tell me what's happening in this world in simple terms:
 
-World Name: ${world.name}
-Total Cycles: ${briefings.length}
-Current Population: ${agentCount || 0} minds
-Status: ${world.status}
+WORLD: ${world.name}
+STATUS: ${world.status === 'ACTIVE' ? 'Running' : 'Paused'}
+CYCLES COMPLETED: ${briefings.length}
+POPULATION: ${agentCount || 0} minds currently alive
 
-Here is what happened each cycle:
+THE CHARACTERS:
+${characterList}
+
+WHAT HAPPENED EACH CYCLE:
 ${allBriefings}
 
-Some key events that happened:
-${allKeyEvents.slice(0, 20).join(', ')}`
+KEY EVENTS:
+${allKeyEvents.slice(0, 15).join(', ')}
+
+MOST RECENT HAPPENINGS:
+${recentHappenings}`
           }
         ],
-        max_tokens: 800,
-        temperature: 0.4,
+        max_tokens: 600,
+        temperature: 0.5,
       }),
     });
 
