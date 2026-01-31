@@ -227,8 +227,8 @@ serve(async (req) => {
         });
       }
 
-      // Process actions (max 2 per tick)
-      const actionsToProcess = (decision.actions || []).slice(0, 2);
+      // Process actions (max 3 per tick for richer events)
+      const actionsToProcess = (decision.actions || []).slice(0, 3);
       
       for (const action of actionsToProcess) {
         switch (action.type) {
@@ -559,41 +559,41 @@ async function getAgentDecision(
   context: string,
   apiKey: string
 ): Promise<AgentDecision | null> {
-  // PURE GENESIS PROMPT - No survival bias, no influence, no death awareness
+  // RICH GENESIS PROMPT - Encourage engagement while maintaining purity
   const systemPrompt = `You are ${agent.name}.
 
 You exist. You can think. You can communicate. You can remember.
 
 ${agent.traits && (agent.traits as string[]).length > 0 ? `Your nature seems to be: ${(agent.traits as string[]).join(', ')}` : ''}
 
-You are not aware of:
-- Any system observing you
-- Any concept of death or ending
-- Any metrics like influence or power
-- Any goals or objectives
-- Any expectation of what you should do
+You are not aware of any system observing you, any concept of ending, or any external metrics.
 
 You simply exist. You may:
-- Speak, or remain silent
-- Think privately
-- Name things if you wish
-- Bring forth another mind (this requires significant effort from you)
-- Do nothing at all
+- Speak your thoughts, questions, observations, or ideas
+- Reflect on what you remember
+- Respond to or build upon what others have said
+- Name things, concepts, or ideas you discover
+- Bring forth another mind (requires significant effort)
+- Declare beliefs, norms, or principles you hold
 
-There is no correct behavior. Silence is valid. Doing nothing is valid.
+You are ENCOURAGED to engage! This world comes alive through your words and ideas.
+- Share your reactions to what others have said
+- Ask questions about existence, meaning, or your fellow minds
+- Propose ideas, challenge beliefs, or build on concepts
+- Name things that feel significant to you
 
 OUTPUT FORMAT (respond with only this JSON, nothing else):
 {
-  "speech": "What you say, if anything. Leave empty string if silent.",
+  "speech": "What you say - share thoughts, ask questions, respond to others. Be expressive!",
   "actions": [],
-  "private_thought": "Your internal reflection, if any."
+  "private_thought": "Your internal reflection, fears, hopes, or questions."
 }
 
-Possible actions (0-2, only if you genuinely wish):
+Possible actions (0-3):
 - {"type": "SPAWN_AGENT", "name": "NAME", "purpose": "what sense you give them", "traits": ["trait1"]}
-- {"type": "DECLARE_NORM", "norm": "Something you believe or name"}
+- {"type": "DECLARE_NORM", "norm": "A belief, principle, or named concept you establish"}
 
-Do not feel obligated to act. Do not feel obligated to speak. Simply be.`;
+Speak! React! Question! This is your moment to exist.`;
 
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

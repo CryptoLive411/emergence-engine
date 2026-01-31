@@ -19,7 +19,8 @@ import {
   Sparkles,
   RefreshCw,
   BookOpen,
-  Database
+  Database,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,17 +43,20 @@ const AdminContent = () => {
   const { data: agents = [] } = useAgents(world?.id);
   const { data: events = [] } = useEvents(world?.id, 100);
   const { data: artifacts = [] } = useArtifacts(world?.id);
-  const { startWorld, pauseWorld, resetWorld, runTick, spawnAgent } = useWorldControl();
+  const { startWorld, pauseWorld, resetWorld, runTick, spawnAgent, turboBurst } = useWorldControl();
   
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState('');
   const [tickDialogOpen, setTickDialogOpen] = useState(false);
+  const [turboDialogOpen, setTurboDialogOpen] = useState(false);
   const [spawnDialogOpen, setSpawnDialogOpen] = useState(false);
   const [spawnPassword, setSpawnPassword] = useState('');
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentPurpose, setNewAgentPurpose] = useState('');
   const [newAgentTraits, setNewAgentTraits] = useState('');
   const [tickPassword, setTickPassword] = useState('');
+  const [turboPassword, setTurboPassword] = useState('');
+  const [turboCycles, setTurboCycles] = useState(3);
   const [isRefreshingSummary, setIsRefreshingSummary] = useState(false);
   const [summaryRefreshStatus, setSummaryRefreshStatus] = useState<string | null>(null);
 
@@ -182,6 +186,20 @@ const AdminContent = () => {
                     <Play className="w-4 h-4 mr-2" />
                   )}
                   Force Update
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-14 font-mono border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                  onClick={() => setTurboDialogOpen(true)}
+                  disabled={turboBurst.isPending || !isRunning}
+                >
+                  {turboBurst.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4 mr-2" />
+                  )}
+                  Turbo Burst
                 </Button>
 
                 <Button
@@ -354,6 +372,85 @@ const AdminContent = () => {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   'Force Update Now'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Turbo Burst Dialog */}
+        <Dialog open={turboDialogOpen} onOpenChange={setTurboDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="font-mono text-amber-500 flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Turbo Burst Mode
+              </DialogTitle>
+              <DialogDescription>
+                Run multiple world update cycles in rapid succession. Each cycle generates natural events from all agents.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="turbo-cycles" className="text-sm font-mono">Number of Cycles</Label>
+                <div className="flex gap-2">
+                  {[3, 5, 10].map((num) => (
+                    <Button
+                      key={num}
+                      variant={turboCycles === num ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTurboCycles(num)}
+                      className="font-mono"
+                    >
+                      {num}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Each cycle takes ~30 seconds. Total time: ~{turboCycles * 0.5} minutes
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="turbo-password" className="text-sm font-mono">Admin Password</Label>
+                <Input
+                  id="turbo-password"
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={turboPassword}
+                  onChange={(e) => setTurboPassword(e.target.value)}
+                  className="font-mono"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setTurboDialogOpen(false);
+                  setTurboPassword('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  turboBurst.mutate({ password: turboPassword, burstCount: turboCycles });
+                  setTurboDialogOpen(false);
+                  setTurboPassword('');
+                }}
+                disabled={!turboPassword || turboBurst.isPending}
+                className="bg-amber-500 hover:bg-amber-600"
+              >
+                {turboBurst.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Run {turboCycles} Cycles
+                  </>
                 )}
               </Button>
             </DialogFooter>
