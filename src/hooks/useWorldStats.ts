@@ -54,8 +54,8 @@ export function useWorldStats(worldId?: string) {
       };
     },
     enabled: !!worldId,
-    staleTime: 300000, // 5 minutes
-    refetchInterval: 600000, // Auto-refresh every 10 minutes
+    staleTime: 300000, // 5 minutes - data stays fresh
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

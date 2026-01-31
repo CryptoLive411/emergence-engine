@@ -94,8 +94,8 @@ export function useWorld() {
       if (pausedError && pausedError.code !== 'PGRST116') throw pausedError;
       return pausedWorld as World | null;
     },
-    staleTime: 30000, // Data stays fresh for 30 seconds
-    refetchInterval: 30000, // Refresh every 30 seconds to keep stats updated
+    staleTime: 300000, // Data stays fresh for 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -139,8 +139,8 @@ export function useAgents(worldId?: string) {
       return uniqueAgents as Agent[];
     },
     enabled: !!worldId,
-    staleTime: 30000, // Data stays fresh for 30 seconds
-    refetchInterval: 30000, // Refresh every 30 seconds to keep stats updated
+    staleTime: 300000, // Data stays fresh for 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -204,8 +204,8 @@ export function useEvents(worldId?: string, limit = 50) {
       return (data || []) as WorldEvent[];
     },
     enabled: !!worldId,
-    staleTime: 120000, // Data stays fresh for 2 minutes
-    refetchInterval: 120000, // Refresh every 2 minutes
+    staleTime: 300000, // Data stays fresh for 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
   });
 }
@@ -250,7 +250,7 @@ export function useBriefings(worldId?: string) {
     },
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
-    refetchInterval: 300000, // Refresh every 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
   });
 }
@@ -296,7 +296,7 @@ export function useCurrentTurn(worldId?: string) {
     },
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
-    refetchInterval: 300000, // Refresh every 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
   });
 }
