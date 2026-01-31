@@ -193,21 +193,16 @@ function WorldSummaryComponent() {
         </div>
         
         {/* Footer with cache info */}
-        <div className="pt-3 border-t border-border/50 flex items-center justify-between text-xs font-mono text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            {summaryData?.generatedAt && (
-              <span>
-                Updated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
-              </span>
-            )}
-          </div>
-          
-          {nextRefresh && nextRefresh > new Date() && (
-            <span className="text-muted-foreground/70">
-              Auto-refresh in {formatDistanceToNow(nextRefresh)}
+        <div className="pt-3 border-t border-border/50 flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
+          <Clock className="w-3 h-3" />
+          {summaryData?.generatedAt && (
+            <span>
+              Updated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
             </span>
           )}
+          <span className="text-muted-foreground/70 ml-2">
+            • Click refresh to update manually
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -52,8 +52,8 @@ export function usePaginatedEvents(worldId?: string) {
       return events;
     },
     enabled: !!worldId,
-    staleTime: 300000, // 5 minutes
-    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds to show new events
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

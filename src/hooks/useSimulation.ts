@@ -80,8 +80,8 @@ export function useWorld() {
       if (error && error.code !== 'PGRST116') throw error;
       return data as World | null;
     },
-    staleTime: 300000, // Data stays fresh for 5 minutes
-    refetchInterval: 300000, // Refresh every 5 minutes
+    staleTime: 30000, // Data stays fresh for 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds to keep stats updated
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -105,8 +105,8 @@ export function useAgents(worldId?: string) {
       return (data || []) as Agent[];
     },
     enabled: !!worldId,
-    staleTime: 300000, // Data stays fresh for 5 minutes
-    refetchInterval: 300000, // Refresh every 5 minutes
+    staleTime: 30000, // Data stays fresh for 30 seconds
+    refetchInterval: 30000, // Refresh every 30 seconds to keep stats updated
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
