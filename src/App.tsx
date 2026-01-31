@@ -18,8 +18,8 @@ import Admin from "./pages/Admin";
 
 // EMERGENCY MAINTENANCE MODE
 // Set to false when ready to restore normal operation
-// Currently enabled while deploying performance fixes (excessive auto-refetching causing browser freeze)
-const MAINTENANCE_MODE = true;
+// Disabled - using EMERGENCY_MINIMAL_MODE in Index.tsx instead
+const MAINTENANCE_MODE = false;
 
 const queryClient = new QueryClient();
 

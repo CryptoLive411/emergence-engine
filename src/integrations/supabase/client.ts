@@ -13,5 +13,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
+  global: {
+    headers: {
+      'x-client-info': 'emergence-engine',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  // Increase timeout to handle slow queries
+  realtime: {
+    timeout: 30000,
+  },
 });
