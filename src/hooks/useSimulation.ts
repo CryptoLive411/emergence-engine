@@ -409,6 +409,29 @@ export function useWorldControl() {
     },
   });
 
+  const turboBurst = useMutation({
+    mutationFn: async ({ password, burstCount = 3 }: { password: string; burstCount?: number }) => {
+      const response = await supabase.functions.invoke('world-control', {
+        body: { action: 'turbo-burst', password, settings: { burstCount } },
+      });
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['world'] });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['briefings'] });
+      queryClient.invalidateQueries({ queryKey: ['current-turn'] });
+      queryClient.invalidateQueries({ queryKey: ['world-stats'] });
+      toast.success(data.message || 'Turbo burst complete!');
+    },
+    onError: (error: Error) => {
+      toast.error(`Turbo burst failed: ${error.message}`);
+    },
+  });
+
   return {
     startWorld,
     pauseWorld,
@@ -416,6 +439,7 @@ export function useWorldControl() {
     runTick,
     updateSettings,
     spawnAgent,
+    turboBurst,
   };
 }
 

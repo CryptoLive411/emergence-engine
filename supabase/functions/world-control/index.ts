@@ -410,6 +410,76 @@ serve(async (req) => {
         );
       }
 
+      case 'turbo-burst': {
+        // PROTECTED: Only admin can run turbo burst
+        if (!adminPassword) {
+          return new Response(
+            JSON.stringify({ error: 'Admin password not configured' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        if (password !== adminPassword) {
+          return new Response(
+            JSON.stringify({ error: 'Admin authorization required for turbo mode' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Get TICK_SECRET from request or vault
+        const tickSecret = Deno.env.get('TICK_SECRET');
+        if (!tickSecret) {
+          return new Response(
+            JSON.stringify({ error: 'TICK_SECRET not configured' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const burstCount = settings?.burstCount || 3; // Default 3 ticks
+        const results = [];
+        
+        for (let i = 0; i < burstCount; i++) {
+          try {
+            // Call world-tick function directly
+            const tickResponse = await fetch(`${supabaseUrl}/functions/v1/world-tick`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ tickSecret }),
+            });
+
+            if (tickResponse.ok) {
+              const tickResult = await tickResponse.json();
+              results.push({ cycle: i + 1, success: true, ...tickResult });
+            } else {
+              const errorText = await tickResponse.text();
+              results.push({ cycle: i + 1, success: false, error: errorText });
+            }
+
+            // Small delay between ticks to prevent rate limiting (2 seconds)
+            if (i < burstCount - 1) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          } catch (err) {
+            results.push({ cycle: i + 1, success: false, error: err instanceof Error ? err.message : 'Unknown error' });
+          }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        const totalEvents = results.filter(r => r.success).reduce((sum, r) => sum + (r.events || 0), 0);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: `Turbo burst complete: ${successCount}/${burstCount} cycles ran, ${totalEvents} total events`,
+            results 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),
