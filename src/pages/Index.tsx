@@ -18,6 +18,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
+// EMERGENCY MODE: Disable heavy components to prevent freeze
+const EMERGENCY_MINIMAL_MODE = true;
+
 const Index = () => {
   const { data: world, isLoading: worldLoading, error: worldError, refetch: refetchWorld } = useWorld();
   const { data: agents = [] } = useAgents(world?.id);
@@ -158,8 +161,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Story So Far - Prominent for first-time users */}
-      {events.length > 0 && (
+      {/* Story So Far - DISABLED IN EMERGENCY MODE */}
+      {events.length > 0 && !EMERGENCY_MINIMAL_MODE && (
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <BookOpen className="w-5 h-5 text-primary" />
@@ -244,8 +247,8 @@ const Index = () => {
             />
           )}
 
-          {/* Comprehensive Progression Tracking - Lazy loaded to prevent freeze */}
-          {world && (
+          {/* Comprehensive Progression Tracking - DISABLED IN EMERGENCY MODE */}
+          {world && !EMERGENCY_MINIMAL_MODE && (
             <Suspense fallback={
               <div className="p-4 rounded-xl border border-border bg-card/30 animate-pulse">
                 <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
@@ -255,12 +258,22 @@ const Index = () => {
               <WorldProgressionPanel worldId={world.id} />
             </Suspense>
           )}
+          
+          {/* Emergency Mode Notice */}
+          {EMERGENCY_MINIMAL_MODE && (
+            <div className="p-4 rounded-xl border border-action/30 bg-action/5">
+              <p className="text-xs font-mono text-muted-foreground">
+                <span className="text-action font-semibold">Performance Mode Active</span><br/>
+                Advanced metrics temporarily disabled for stability.
+              </p>
+            </div>
+          )}
 
-          {/* Witness Panel */}
-          <WitnessPanel />
+          {/* Witness Panel - DISABLED IN EMERGENCY MODE */}
+          {!EMERGENCY_MINIMAL_MODE && <WitnessPanel />}
         
-          {/* Leaderboard */}
-          <Leaderboard />
+          {/* Leaderboard - DISABLED IN EMERGENCY MODE */}
+          {!EMERGENCY_MINIMAL_MODE && <Leaderboard />}
 
           {/* Quick links */}
           <div className="p-4 rounded-xl border border-primary/20 glass-card">
