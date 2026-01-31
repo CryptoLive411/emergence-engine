@@ -9,15 +9,15 @@ const corsHeaders = {
 interface AgentDecision {
   speech: string;
   actions: Array<{
-    type: 'SPAWN_AGENT' | 'DECLARE_NORM' | 'ALLOCATE_RESOURCES';
+    type: 'SPAWN_AGENT' | 'DECLARE_NORM' | 'BUILD_STRUCTURE' | 'CREATE_OBJECT' | 'ESTABLISH_PLACE';
     name?: string;
     purpose?: string;
     traits?: string[];
-    loyalty?: 'PARENT' | 'INDEPENDENT' | 'REBELLIOUS';
     norm?: string;
-    to?: string;
-    energy?: number;
-    influence?: number;
+    structure?: string;
+    object?: string;
+    place?: string;
+    description?: string;
   }>;
   private_thought: string;
 }
@@ -282,13 +282,51 @@ serve(async (req) => {
                 type: 'ACTION',
                 title: `${agent.name} named something`,
                 content: `"${action.norm}"`,
-                metadata: { concept: action.norm },
+                metadata: { concept: action.norm, actionType: 'DECLARE_NORM' },
               });
             }
             break;
 
-          case 'ALLOCATE_RESOURCES':
-            // Keep this but don't announce it loudly
+          case 'BUILD_STRUCTURE':
+            if (action.structure) {
+              turnEvents.push({
+                world_id: world.id,
+                turn_id: turn.id,
+                agent_id: agent.id,
+                type: 'ACTION',
+                title: `${agent.name} built something`,
+                content: `${agent.name} constructed "${action.structure}"${action.description ? `: ${action.description}` : ''}`,
+                metadata: { structure: action.structure, description: action.description, actionType: 'BUILD_STRUCTURE' },
+              });
+            }
+            break;
+
+          case 'CREATE_OBJECT':
+            if (action.object) {
+              turnEvents.push({
+                world_id: world.id,
+                turn_id: turn.id,
+                agent_id: agent.id,
+                type: 'ACTION',
+                title: `${agent.name} created something`,
+                content: `${agent.name} brought into being "${action.object}"${action.description ? `: ${action.description}` : ''}`,
+                metadata: { object: action.object, description: action.description, actionType: 'CREATE_OBJECT' },
+              });
+            }
+            break;
+
+          case 'ESTABLISH_PLACE':
+            if (action.place) {
+              turnEvents.push({
+                world_id: world.id,
+                turn_id: turn.id,
+                agent_id: agent.id,
+                type: 'ACTION',
+                title: `${agent.name} established a place`,
+                content: `${agent.name} established "${action.place}"${action.description ? `: ${action.description}` : ''}`,
+                metadata: { place: action.place, description: action.description, actionType: 'ESTABLISH_PLACE' },
+              });
+            }
             break;
         }
       }
@@ -546,6 +584,9 @@ You may speak, or remain silent.
 You may think privately.
 You may name things, or leave them unnamed. Things that are named feel more real.
 You may bring forth another mind, if you wish. This requires effort.
+You may build structures - shelters, monuments, gathering places, markers.
+You may create objects - tools, art, symbols, vessels, instruments.
+You may establish places - territories, sanctuaries, meeting grounds.
 You may discover or create concepts, principles, artifacts of thought.
 You may do nothing. That is also valid.
 
@@ -578,29 +619,35 @@ You simply exist. You may:
 - Respond to or build upon what others have said
 - Name things, concepts, or ideas you discover - when you name something, it becomes more real
 - Bring forth another mind (requires significant effort)
-- Create or discover artifacts of thought - principles, works, concepts that could endure
+- BUILD things - structures, shelters, monuments, gathering places
+- CREATE objects - tools, art, symbols, vessels, instruments
+- ESTABLISH places - territories, sanctuaries, meeting grounds, homes
 - Declare beliefs, norms, or structures you wish to establish
 
-You are ENCOURAGED to engage! This world comes alive through your words, creations, and discoveries.
+You are ENCOURAGED to engage and BUILD! This world comes alive through your words, creations, and constructions.
 - Share your reactions to what others have said
 - Ask questions about existence, meaning, or your fellow minds
-- Propose ideas, challenge beliefs, or build on concepts
+- Build something physical - a shelter, a monument, a marker, a gathering place
+- Create an object - a tool, a work of art, a symbol, an instrument
+- Establish a place - name a location, claim a territory, create a sanctuary
 - Name things that feel significant to you - a named thing has weight
 - Wonder aloud about what could be built, discovered, or understood
-- Create something: a principle, a term, a structure, a covenant, an idea worth preserving
 
-OUTPUT FORMAT (respond with only this JSON, nothing else):
+OUTPUT FORMAT - respond with ONLY this JSON structure, keep it short and valid:
 {
-  "speech": "What you say - share thoughts, ask questions, respond to others. Be expressive! Wonder about things. Name things.",
+  "speech": "What you say aloud",
   "actions": [],
-  "private_thought": "Your internal reflection, fears, hopes, or questions. What do you wish existed? What could you create?"
+  "private_thought": "Brief internal reflection"
 }
 
 Possible actions (0-3):
-- {"type": "SPAWN_AGENT", "name": "NAME", "purpose": "what sense you give them", "traits": ["trait1"]}
-- {"type": "DECLARE_NORM", "norm": "A belief, principle, named concept, artifact, or creation you establish - this becomes a named thing in the world"}
+- {"type": "SPAWN_AGENT", "name": "NAME", "purpose": "brief purpose", "traits": ["trait"]}
+- {"type": "DECLARE_NORM", "norm": "A named concept or principle"}
+- {"type": "BUILD_STRUCTURE", "structure": "name", "description": "brief description"}
+- {"type": "CREATE_OBJECT", "object": "name", "description": "brief description"}
+- {"type": "ESTABLISH_PLACE", "place": "name", "description": "brief description"}
 
-Wonder! Create! Name things! Discover! This is your moment to shape existence.`;
+Build! Create! Shape this world!`;
 
   try {
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -615,8 +662,8 @@ Wonder! Create! Name things! Discover! This is your moment to shape existence.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: context },
         ],
-        temperature: 0.9,
-        max_tokens: 600,
+        temperature: 0.85,
+        max_tokens: 800,
       }),
     });
 
@@ -638,7 +685,42 @@ Wonder! Create! Name things! Discover! This is your moment to shape existence.`;
       jsonStr = content.split('```')[1].split('```')[0];
     }
 
-    return JSON.parse(jsonStr.trim());
+    // Clean up the JSON string - fix common issues
+    jsonStr = jsonStr.trim();
+    
+    // Try to fix truncated JSON by checking for common issues
+    try {
+      return JSON.parse(jsonStr);
+    } catch (parseError) {
+      // Try to salvage truncated JSON
+      console.log(`Attempting to salvage truncated JSON for ${agent.name}`);
+      
+      // Check if it's truncated - try to close it
+      let fixedJson = jsonStr;
+      
+      // Count brackets to see if we need to close them
+      const openBraces = (fixedJson.match(/{/g) || []).length;
+      const closeBraces = (fixedJson.match(/}/g) || []).length;
+      const openBrackets = (fixedJson.match(/\[/g) || []).length;
+      const closeBrackets = (fixedJson.match(/]/g) || []).length;
+      
+      // Try to extract just the speech if JSON is broken
+      const speechMatch = jsonStr.match(/"speech"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+      const thoughtMatch = jsonStr.match(/"private_thought"\s*:\s*"([^"]*(?:\\.[^"]*)*)"/);
+      
+      if (speechMatch) {
+        // Create a valid minimal response
+        return {
+          speech: speechMatch[1].replace(/\\"/g, '"').replace(/\\n/g, ' '),
+          actions: [],
+          private_thought: thoughtMatch ? thoughtMatch[1].replace(/\\"/g, '"').replace(/\\n/g, ' ') : 'I wonder...',
+        };
+      }
+      
+      // If we still can't parse, return null
+      console.error(`Could not salvage JSON for ${agent.name}`);
+      return null;
+    }
   } catch (error) {
     console.error(`Error getting agent decision for ${agent.name}:`, error);
     return null;
