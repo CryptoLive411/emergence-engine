@@ -112,12 +112,14 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
 
       {/* Description - expandable if long */}
       <div className="pl-10">
-        <p className={cn(
-          "text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap",
-          !isExpanded && isLongDescription && "line-clamp-3"
+        <div className={cn(
+          "text-foreground/80 text-sm leading-relaxed overflow-hidden transition-all duration-300",
+          !isExpanded && isLongDescription && "max-h-[4.5rem]"
         )}>
-          {entry.description}
-        </p>
+          <p className="whitespace-pre-wrap">
+            {entry.description}
+          </p>
+        </div>
         
         {/* Expand/Collapse button for long descriptions */}
         {isLongDescription && (
