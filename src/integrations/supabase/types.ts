@@ -711,6 +711,50 @@ export type Database = {
           },
         ]
       }
+      world_summaries: {
+        Row: {
+          created_at: string
+          cycle_count: number
+          generated_at: string
+          id: string
+          population: number
+          summary: string
+          world_id: string
+          world_name: string
+          world_status: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_count?: number
+          generated_at?: string
+          id?: string
+          population?: number
+          summary: string
+          world_id: string
+          world_name: string
+          world_status: string
+        }
+        Update: {
+          created_at?: string
+          cycle_count?: number
+          generated_at?: string
+          id?: string
+          population?: number
+          summary?: string
+          world_id?: string
+          world_name?: string
+          world_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "world_summaries_world_id_fkey"
+            columns: ["world_id"]
+            isOneToOne: true
+            referencedRelation: "worlds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worlds: {
         Row: {
           chaos_factor: number
@@ -827,6 +871,7 @@ export type Database = {
       }
     }
     Functions: {
+      trigger_summary_generation: { Args: never; Returns: undefined }
       trigger_world_tick: { Args: never; Returns: undefined }
     }
     Enums: {

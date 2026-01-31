@@ -94,7 +94,7 @@ const Briefings = () => {
         <p className="text-muted-foreground font-mono text-sm">
           {briefings.length === 0 
             ? "The world records what it deems significant. These are the moments that shaped history."
-            : `${briefings.length} cycles recorded · Updates every 30 minutes · Scroll up to read from the beginning`
+            : `${briefings.length} cycles recorded · Updates every 10 minutes · Scroll up to read from the beginning`
           }
         </p>
         
@@ -103,14 +103,14 @@ const Briefings = () => {
           <div className="mt-4 p-4 rounded-lg border border-primary/30 bg-primary/5">
             <h3 className="text-sm font-mono font-semibold text-primary mb-2">📖 New here? Start at Genesis</h3>
             <p className="text-xs font-mono text-muted-foreground">
-              This is a living world of autonomous minds. Each entry documents what happened during a 30-minute cycle. 
+              This is a living world of autonomous minds. Each entry documents what happened during a 10-minute cycle. 
               Scroll up to see how it all began, or read the latest below.
             </p>
           </div>
         )}
       </div>
 
-      {/* World Summary - refreshes every 6 hours */}
+      {/* World Summary - auto-refreshes every 10 minutes */}
       {briefings.length > 0 && (
         <div className="mb-8">
           <WorldSummary />
@@ -241,7 +241,7 @@ const Briefings = () => {
               <div className="p-4 rounded-lg border-2 border-spawn/50 bg-spawn/10 w-full">
                 <h2 className="font-display text-lg font-bold text-spawn">🔮 Now</h2>
                 <p className="text-sm font-mono text-muted-foreground">
-                  Next update in ~30 minutes. The world continues to evolve.
+                  Next update in ~10 minutes. The world continues to evolve.
                 </p>
               </div>
             </div>
