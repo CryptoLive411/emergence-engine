@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Sparkles, Users, MessageSquare, Swords, Landmark } from 'lucide-react';
+import { Sparkles, Users, MessageSquare, Swords, Landmark, Hammer, Package, MapPin, ScrollText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -8,6 +8,7 @@ interface WhatJustChangedProps {
     id: string;
     type: string;
     title: string;
+    content: string;
     created_at: string;
     metadata?: Record<string, any>;
   }>;
@@ -18,52 +19,100 @@ interface WhatJustChangedProps {
  * Gives users immediate orientation and sense of momentum
  */
 function WhatJustChangedComponent({ recentEvents }: WhatJustChangedProps) {
-  // Get last 3 meaningful events (not SYSTEM)
+  // Get last 5 meaningful events (not SYSTEM heartbeats)
   const recentMeaningful = useMemo(() => {
     return recentEvents
-      .filter(e => e.type !== 'SYSTEM')
-      .slice(0, 3);
+      .filter(e => e.type !== 'SYSTEM' || e.metadata?.eventType !== 'HEARTBEAT')
+      .slice(0, 5);
   }, [recentEvents]);
 
   if (recentMeaningful.length === 0) {
     return null;
   }
 
-  const getEventIcon = (type: string) => {
+  const getEventIcon = (type: string, metadata?: Record<string, any>) => {
+    // Check for specific action types in metadata
+    if (type === 'ACTION' && metadata?.actionType) {
+      switch (metadata.actionType) {
+        case 'BUILD_STRUCTURE':
+          return <Hammer className="w-4 h-4" />;
+        case 'CREATE_OBJECT':
+          return <Package className="w-4 h-4" />;
+        case 'ESTABLISH_PLACE':
+          return <MapPin className="w-4 h-4" />;
+        case 'DECLARE_NORM':
+          return <ScrollText className="w-4 h-4" />;
+      }
+    }
+    
     switch (type) {
       case 'SPAWN':
         return <Users className="w-4 h-4" />;
       case 'SPEECH':
-      case 'THOUGHT':
         return <MessageSquare className="w-4 h-4" />;
       case 'CONFLICT':
         return <Swords className="w-4 h-4" />;
       case 'ARTIFACT_CREATED':
       case 'ARTIFACT_NAMED':
         return <Landmark className="w-4 h-4" />;
+      case 'SYSTEM':
+        return <Sparkles className="w-4 h-4" />;
       default:
         return <Sparkles className="w-4 h-4" />;
     }
   };
 
-  const getEventLabel = (type: string, metadata?: Record<string, any>) => {
+  const getEventLabel = (event: { type: string; title: string; content: string; metadata?: Record<string, any> }) => {
+    const { type, title, content, metadata } = event;
+    
+    // Check for specific action types in metadata - show what was created
+    if (type === 'ACTION' && metadata?.actionType) {
+      switch (metadata.actionType) {
+        case 'BUILD_STRUCTURE':
+          return `Built: "${metadata.structure}"`;
+        case 'CREATE_OBJECT':
+          return `Created: "${metadata.object}"`;
+        case 'ESTABLISH_PLACE':
+          return `Established: "${metadata.place}"`;
+        case 'DECLARE_NORM':
+          return `Named: "${metadata.concept?.slice(0, 50)}${metadata.concept?.length > 50 ? '...' : ''}"`;
+      }
+    }
+    
     switch (type) {
       case 'SPAWN':
-        return 'A new mind emerged';
+        return title || 'A new mind emerged';
       case 'SPEECH':
-        return 'A statement was made';
-      case 'THOUGHT':
-        return 'A thought formed';
-      case 'CONFLICT':
-        return 'Views are in conflict';
-      case 'ARTIFACT_CREATED':
-        return 'Something was created';
-      case 'ARTIFACT_NAMED':
-        return 'Something was named';
-      case 'BELIEF_FORMED':
-        return 'A new belief formed';
+        // Show snippet of what was said
+        const speechPreview = content?.slice(0, 60);
+        return `"${speechPreview}${content?.length > 60 ? '...' : ''}"`;
+      case 'SYSTEM':
+        return content || 'Something happened';
       default:
-        return 'Something happened';
+        return title || 'Something happened';
+    }
+  };
+
+  const getEventColor = (type: string, metadata?: Record<string, any>) => {
+    if (type === 'ACTION' && metadata?.actionType) {
+      switch (metadata.actionType) {
+        case 'BUILD_STRUCTURE':
+          return 'text-action';
+        case 'CREATE_OBJECT':
+          return 'text-spawn';
+        case 'ESTABLISH_PLACE':
+          return 'text-primary';
+        case 'DECLARE_NORM':
+          return 'text-speech';
+      }
+    }
+    switch (type) {
+      case 'SPAWN':
+        return 'text-spawn';
+      case 'SPEECH':
+        return 'text-speech';
+      default:
+        return 'text-primary';
     }
   };
 
@@ -71,38 +120,42 @@ function WhatJustChangedComponent({ recentEvents }: WhatJustChangedProps) {
 
   return (
     <div className="mb-6 p-4 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent backdrop-blur-sm">
-      <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-primary/20 text-primary shrink-0">
-          {getEventIcon(latestEvent.type)}
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-primary mb-1">
-            What Just Changed
-          </h3>
-          
-          <div className="space-y-1.5">
-            {recentMeaningful.map((event, idx) => (
-              <div 
-                key={event.id}
-                className={cn(
-                  "flex items-start gap-2 text-sm",
-                  idx === 0 ? "text-foreground font-medium" : "text-muted-foreground"
-                )}
-              >
-                <span className="text-primary shrink-0">–</span>
-                <div className="flex-1 min-w-0">
-                  <span>{getEventLabel(event.type, event.metadata)}</span>
-                  {idx === 0 && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+      <h3 className="text-xs font-mono uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
+        <Sparkles className="w-3 h-3" />
+        Latest Activity
+      </h3>
+      
+      <div className="space-y-2">
+        {recentMeaningful.map((event, idx) => (
+          <div 
+            key={event.id}
+            className={cn(
+              "flex items-start gap-3 p-2 rounded-lg transition-colors",
+              idx === 0 ? "bg-primary/10" : "hover:bg-secondary/30"
+            )}
+          >
+            <div className={cn(
+              "p-1.5 rounded shrink-0",
+              idx === 0 ? "bg-primary/20" : "bg-secondary/50"
+            )}>
+              <span className={getEventColor(event.type, event.metadata)}>
+                {getEventIcon(event.type, event.metadata)}
+              </span>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className={cn(
+                "text-sm font-mono leading-relaxed",
+                idx === 0 ? "text-foreground" : "text-muted-foreground"
+              )}>
+                {getEventLabel(event)}
+              </p>
+              <span className="text-xs text-muted-foreground/70">
+                {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+              </span>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

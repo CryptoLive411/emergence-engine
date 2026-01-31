@@ -163,6 +163,7 @@ serve(async (req) => {
     const agentUpdates: any[] = [];
     const agentSilences: string[] = []; // Agents who fade into silence
     const memoriesToStore: any[] = [];
+    const artifactsToCreate: any[] = []; // Artifacts created this turn
 
     // All agents process - no pre-filtering, no death checks
     const allActiveAgents = agents || [];
@@ -284,6 +285,17 @@ serve(async (req) => {
                 content: `"${action.norm}"`,
                 metadata: { concept: action.norm, actionType: 'DECLARE_NORM' },
               });
+              // Save to artifacts as a concept
+              artifactsToCreate.push({
+                world_id: world.id,
+                creator_agent_id: agent.id,
+                name: action.norm.slice(0, 100), // Limit name length
+                artifact_type: 'concept',
+                content: action.norm,
+                origin_turn: newTurnNumber,
+                last_referenced_turn: newTurnNumber,
+                status: 'emerging',
+              });
             }
             break;
 
@@ -297,6 +309,17 @@ serve(async (req) => {
                 title: `${agent.name} built something`,
                 content: `${agent.name} constructed "${action.structure}"${action.description ? `: ${action.description}` : ''}`,
                 metadata: { structure: action.structure, description: action.description, actionType: 'BUILD_STRUCTURE' },
+              });
+              // Save to artifacts as institution (physical structures)
+              artifactsToCreate.push({
+                world_id: world.id,
+                creator_agent_id: agent.id,
+                name: action.structure,
+                artifact_type: 'institution',
+                content: action.description || action.structure,
+                origin_turn: newTurnNumber,
+                last_referenced_turn: newTurnNumber,
+                status: 'emerging',
               });
             }
             break;
@@ -312,6 +335,17 @@ serve(async (req) => {
                 content: `${agent.name} brought into being "${action.object}"${action.description ? `: ${action.description}` : ''}`,
                 metadata: { object: action.object, description: action.description, actionType: 'CREATE_OBJECT' },
               });
+              // Save to artifacts as symbol (objects/tools)
+              artifactsToCreate.push({
+                world_id: world.id,
+                creator_agent_id: agent.id,
+                name: action.object,
+                artifact_type: 'symbol',
+                content: action.description || action.object,
+                origin_turn: newTurnNumber,
+                last_referenced_turn: newTurnNumber,
+                status: 'emerging',
+              });
             }
             break;
 
@@ -325,6 +359,17 @@ serve(async (req) => {
                 title: `${agent.name} established a place`,
                 content: `${agent.name} established "${action.place}"${action.description ? `: ${action.description}` : ''}`,
                 metadata: { place: action.place, description: action.description, actionType: 'ESTABLISH_PLACE' },
+              });
+              // Save to artifacts as place
+              artifactsToCreate.push({
+                world_id: world.id,
+                creator_agent_id: agent.id,
+                name: action.place,
+                artifact_type: 'place',
+                content: action.description || action.place,
+                origin_turn: newTurnNumber,
+                last_referenced_turn: newTurnNumber,
+                status: 'emerging',
               });
             }
             break;
@@ -428,6 +473,16 @@ serve(async (req) => {
     // Insert all memories
     if (memoriesToStore.length > 0) {
       await supabase.from('memories').insert(memoriesToStore);
+    }
+
+    // Insert all artifacts created this turn
+    if (artifactsToCreate.length > 0) {
+      const { error: artifactError } = await supabase.from('artifacts').insert(artifactsToCreate);
+      if (artifactError) {
+        console.error('Error inserting artifacts:', artifactError);
+      } else {
+        console.log(`Created ${artifactsToCreate.length} new artifacts`);
+      }
     }
 
     // Generate chronicle entry (not briefing - just observation)
