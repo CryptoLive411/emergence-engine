@@ -53,8 +53,8 @@ export function usePaginatedEvents(worldId?: string) {
       return events;
     },
     enabled: !!worldId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 30000, // Refresh every 30 seconds to show new events
+    staleTime: 300000, // 5 minutes
+    refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
