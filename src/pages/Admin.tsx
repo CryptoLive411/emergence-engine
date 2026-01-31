@@ -4,6 +4,7 @@ import { useWorld, useAgents, useEvents, useWorldControl } from '@/hooks/useSimu
 import { useArtifacts } from '@/hooks/useWorldMemory';
 import { AdminAuthGate } from '@/components/AdminAuthGate';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 import { 
   Eye, 
   Play, 
@@ -17,7 +18,8 @@ import {
   Plus,
   Sparkles,
   RefreshCw,
-  BookOpen
+  BookOpen,
+  Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -209,6 +211,16 @@ const AdminContent = () => {
                   )}
                   Refresh Story
                 </Button>
+
+                <Link to="/admin/backfill" className="col-span-2">
+                  <Button
+                    variant="outline"
+                    className="w-full h-14 font-mono border-spawn/30 text-spawn hover:bg-spawn/10"
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    Backfill Summaries
+                  </Button>
+                </Link>
                 
                 <Button
                   variant="outline"

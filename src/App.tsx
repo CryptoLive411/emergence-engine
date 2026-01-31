@@ -16,6 +16,7 @@ import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 import Maintenance from "./pages/Maintenance";
 import Admin from "./pages/Admin";
+import AdminBackfill from "./pages/AdminBackfill";
 
 // EMERGENCY MAINTENANCE MODE
 // Set to false when ready to restore normal operation
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/museum" element={<Museum />} />
               <Route path="/docs" element={<Docs />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/backfill" element={<AdminBackfill />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           )}

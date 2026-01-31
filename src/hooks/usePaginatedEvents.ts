@@ -7,11 +7,12 @@ export interface PaginatedEvent {
   world_id: string;
   turn_id: string;
   agent_id: string | null;
-  type: 'SPEECH' | 'ACTION' | 'SPAWN' | 'SYSTEM';
+  type: 'SPEECH' | 'ACTION' | 'SPAWN' | 'SYSTEM' | 'ARTIFACT_NAMED' | 'BELIEF_FORMED' | 'CONFLICT';
   title: string;
   content: string;
   metadata: Record<string, unknown>;
   created_at: string;
+  human_summary?: string;
 }
 
 const PAGE_SIZE = 15;
