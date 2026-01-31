@@ -1,4 +1,4 @@
-import { useMemo, useCallback, lazy, Suspense } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
 import { ChronicleEntryLite } from '@/components/ChronicleEntryLite';
 import { EnhancedNamingEvent } from '@/components/EnhancedNamingEvent';
@@ -7,10 +7,6 @@ import { WitnessPanel } from '@/components/WitnessPanel';
 import { Leaderboard } from '@/components/Leaderboard';
 import { WhatJustChanged } from '@/components/WhatJustChanged';
 import { QuoteOfTheMoment } from '@/components/QuoteOfTheMoment';
-import { RelationshipGraph } from '@/components/RelationshipGraph';
-import { EventTimeline } from '@/components/EventTimeline';
-import { ActivityHeatmap } from '@/components/ActivityHeatmap';
-import { ConceptMap } from '@/components/ConceptMap';
 // Lazy load heavy components to prevent initial freeze
 const WorldProgressionPanel = lazy(() => import('@/components/WorldProgressionPanel').then(m => ({ default: m.WorldProgressionPanel })));
 import { WorldSummary } from '@/components/WorldSummary';
@@ -21,7 +17,7 @@ import { useArtifacts } from '@/hooks/useWorldMemory';
 import { useWorldStats } from '@/hooks/useWorldStats';
 import { mapEventToCategory } from '@/data/chronicleTypes';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ScrollText, Users, GitBranch, Landmark, Infinity, Loader2, BookOpen, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowRight, ScrollText, Users, GitBranch, Landmark, Infinity, Loader2, BookOpen, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -192,36 +188,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* Visual Analytics Section */}
-      {events.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="font-display font-semibold text-foreground tracking-wide">Visual Overview</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Relationship Network */}
-            {agents.length > 0 && (
-              <RelationshipGraph agents={agents} events={events} />
-            )}
-
-            {/* Activity Heatmap */}
-            <ActivityHeatmap events={events} />
-
-            {/* Event Timeline */}
-            <EventTimeline events={events} limit={8} />
-
-            {/* Concept Map */}
-            {(latestBriefing?.dominant_norms?.length || artifacts.length > 0) && (
-              <ConceptMap 
-                beliefs={latestBriefing?.dominant_norms as string[] || []}
-                artifacts={artifacts}
-              />
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Chronicle Feed */}
