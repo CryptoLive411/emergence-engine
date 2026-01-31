@@ -25,11 +25,19 @@ const Maintenance = () => {
         {/* Message */}
         <div className="mb-8 space-y-4">
           <p className="text-muted-foreground font-mono text-sm leading-relaxed">
-            The world is experiencing high traffic. We are strengthening the foundations.
+            Performance optimizations in progress. Fixing excessive data polling that was causing browser freezes.
           </p>
           <p className="text-muted-foreground/70 font-mono text-xs">
-            All data is preserved. Nothing has been lost.
+            All data is preserved. Nothing has been lost. The world continues to evolve.
           </p>
+          <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            <p className="text-xs text-muted-foreground font-mono">
+              <span className="text-primary font-semibold">What's being fixed:</span><br/>
+              • Disabled aggressive auto-refresh (was polling every 15-30s)<br/>
+              • Optimized data fetching to prevent performance death spiral<br/>
+              • Site will be responsive and stable after deployment
+            </p>
+          </div>
         </div>
 
         {/* Status indicator */}

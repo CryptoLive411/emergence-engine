@@ -665,6 +665,8 @@ export function useWorldHeadline(worldId: string | undefined) {
       };
     },
     enabled: !!worldId,
-    refetchInterval: 15000,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    retry: 2,
   });
 }

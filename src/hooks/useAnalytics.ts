@@ -46,7 +46,9 @@ export function usePopulationHistory(worldId: string | undefined) {
       }));
     },
     enabled: !!worldId,
-    refetchInterval: 30000,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    retry: 2,
   });
 }
 
@@ -86,7 +88,9 @@ export function useEventStats(worldId: string | undefined) {
       }));
     },
     enabled: !!worldId,
-    refetchInterval: 30000,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    retry: 2,
   });
 }
 
@@ -134,7 +138,9 @@ export function useBeliefTracking(worldId: string | undefined) {
         .slice(0, 10);
     },
     enabled: !!worldId,
-    refetchInterval: 30000,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    retry: 2,
   });
 }
 
@@ -190,6 +196,8 @@ export function useLineageStats(worldId: string | undefined) {
       }));
     },
     enabled: !!worldId,
-    refetchInterval: 30000,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: false, // Disable auto-refetch to prevent performance issues
+    retry: 2,
   });
 }
