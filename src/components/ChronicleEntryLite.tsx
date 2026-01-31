@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,8 @@ import {
   Dna, 
   ScrollText, 
   Swords,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ChronicleCategory, CHRONICLE_CATEGORIES } from '@/data/chronicleTypes';
 
@@ -61,6 +63,10 @@ const categoryTextColors: Record<ChronicleCategory, string> = {
 function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
   const Icon = categoryIcons[entry.category];
   const config = CHRONICLE_CATEGORIES[entry.category];
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Check if description is long enough to need expansion
+  const isLongDescription = entry.description.length > 150;
   
   return (
     <article className={cn(
@@ -104,10 +110,35 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
         </time>
       </header>
 
-      {/* Description - truncated */}
-      <p className="text-foreground/80 text-sm leading-relaxed line-clamp-2 pl-10">
-        {entry.description}
-      </p>
+      {/* Description - expandable if long */}
+      <div className="pl-10">
+        <p className={cn(
+          "text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap",
+          !isExpanded && isLongDescription && "line-clamp-3"
+        )}>
+          {entry.description}
+        </p>
+        
+        {/* Expand/Collapse button for long descriptions */}
+        {isLongDescription && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="mt-1 flex items-center gap-1 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-3 h-3" />
+                <span>Show less</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3 h-3" />
+                <span>Read more</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
       
       {/* Involved entities */}
       {entry.involvedAgents && entry.involvedAgents.length > 0 && (
