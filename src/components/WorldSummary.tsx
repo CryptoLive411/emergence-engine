@@ -17,7 +17,7 @@ interface SummaryData {
 }
 
 const CACHE_KEY = 'molt_world_summary';
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 function WorldSummaryComponent() {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
@@ -141,10 +141,26 @@ function WorldSummaryComponent() {
   return (
     <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <BookOpen className="w-5 h-5 text-primary" />
-          <span>The Story So Far</span>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <span>The Story So Far</span>
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchSummary(true)}
+            disabled={isRefreshing}
+            className="text-xs font-mono"
+          >
+            {isRefreshing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            <span className="ml-1.5 hidden sm:inline">Refresh</span>
+          </Button>
+        </div>
         
         {/* Stats row */}
         {summaryData && (
@@ -168,13 +184,16 @@ function WorldSummaryComponent() {
         </div>
         
         {/* Footer with cache info */}
-        <div className="pt-3 border-t border-border/50 flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
-          <Clock className="w-3 h-3" />
-          {summaryData?.generatedAt && (
-            <span>
-              Generated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
-            </span>
-          )}
+        <div className="pt-3 border-t border-border/50 flex items-center justify-between text-xs font-mono text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3 h-3" />
+            {summaryData?.generatedAt && (
+              <span>
+                Generated {formatDistanceToNow(new Date(summaryData.generatedAt), { addSuffix: true })}
+              </span>
+            )}
+          </div>
+          <span className="text-muted-foreground/60">Click refresh for latest</span>
         </div>
       </CardContent>
     </Card>
