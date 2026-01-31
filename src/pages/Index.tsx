@@ -1,10 +1,11 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, lazy, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
 import { ChronicleEntryLite } from '@/components/ChronicleEntryLite';
 import { WorldOverview } from '@/components/WorldOverview';
 import { WitnessPanel } from '@/components/WitnessPanel';
 import { Leaderboard } from '@/components/Leaderboard';
-import { WorldProgressionPanel } from '@/components/WorldProgressionPanel';
+// Lazy load heavy components to prevent initial freeze
+const WorldProgressionPanel = lazy(() => import('@/components/WorldProgressionPanel').then(m => ({ default: m.WorldProgressionPanel })));
 import { WorldSummary } from '@/components/WorldSummary';
 import { LoadingFallback, ErrorFallback } from '@/components/LoadingFallback';
 import { useWorld, useAgents, useBriefings, useWorldControl } from '@/hooks/useSimulation';
@@ -243,8 +244,17 @@ const Index = () => {
             />
           )}
 
-          {/* Comprehensive Progression Tracking */}
-          {world && <WorldProgressionPanel worldId={world.id} />}
+          {/* Comprehensive Progression Tracking - Lazy loaded to prevent freeze */}
+          {world && (
+            <Suspense fallback={
+              <div className="p-4 rounded-xl border border-border bg-card/30 animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </div>
+            }>
+              <WorldProgressionPanel worldId={world.id} />
+            </Suspense>
+          )}
 
           {/* Witness Panel */}
           <WitnessPanel />

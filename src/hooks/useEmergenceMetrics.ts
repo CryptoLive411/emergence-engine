@@ -332,19 +332,23 @@ export function useTier3Metrics(worldId: string | undefined) {
         .select('*')
         .eq('world_id', worldId);
 
+      // Limit to 100 events instead of 200 to reduce processing time
       const { data: events } = await supabase
         .from('events')
         .select('*')
         .eq('world_id', worldId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
-      // Count mentions in events (how often others reference this agent)
+      // Count mentions in events (optimized to prevent O(n²) freeze)
       const mentionCounts = new Map<string, number>();
+      const agentNameMap = new Map((agents || []).map(a => [a.name, a.id]));
+      
       (events || []).forEach(e => {
-        (agents || []).forEach(a => {
-          if (e.content.includes(a.name) && e.agent_id !== a.id) {
-            mentionCounts.set(a.id, (mentionCounts.get(a.id) || 0) + 1);
+        const content = e.content.toLowerCase();
+        agentNameMap.forEach((agentId, agentName) => {
+          if (e.agent_id !== agentId && content.includes(agentName.toLowerCase())) {
+            mentionCounts.set(agentId, (mentionCounts.get(agentId) || 0) + 1);
           }
         });
       });
@@ -451,12 +455,13 @@ export function useTier4Metrics(worldId: string | undefined) {
     queryFn: async () => {
       if (!worldId) return null;
 
+      // Limit to 100 events to reduce processing time
       const { data: events } = await supabase
         .from('events')
         .select('*')
         .eq('world_id', worldId)
         .order('created_at', { ascending: false })
-        .limit(150);
+        .limit(100);
 
       const { data: agents } = await supabase
         .from('agents_public')
@@ -525,12 +530,13 @@ export function useTier5Metrics(worldId: string | undefined) {
     queryFn: async () => {
       if (!worldId) return null;
 
+      // Limit to 100 events to reduce processing time
       const { data: events } = await supabase
         .from('events')
         .select('*, turns!inner(turn_number)')
         .eq('world_id', worldId)
         .order('created_at', { ascending: true })
-        .limit(200);
+        .limit(100);
 
       const { data: briefings } = await supabase
         .from('briefings')
