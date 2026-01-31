@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -10,6 +10,7 @@ import {
   Dna, 
   ScrollText, 
   Swords,
+  AlertTriangle,
 } from 'lucide-react';
 import { ChronicleCategory, CHRONICLE_CATEGORIES } from '@/data/chronicleTypes';
 
@@ -62,6 +63,19 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
   const Icon = categoryIcons[entry.category];
   const config = CHRONICLE_CATEGORIES[entry.category];
   
+  // Detect conflict indicators in content
+  const conflictTag = useMemo(() => {
+    const content = entry.description.toLowerCase();
+    
+    if (entry.category === 'CONFLICT') return 'Structural tension';
+    if (content.includes('disagree') || content.includes('conflict')) return 'Disagreement emerging';
+    if (content.includes('but ') && content.includes('however')) return 'Competing beliefs';
+    if (content.includes('wrong') || content.includes('mistake')) return 'Challenge detected';
+    if (content.includes('question') && content.includes('doubt')) return 'Uncertainty rising';
+    
+    return null;
+  }, [entry.description, entry.category]);
+  
   return (
     <article className={cn(
       "relative p-4 rounded-xl border transition-all duration-300 hover:scale-[1.002]",
@@ -103,6 +117,16 @@ function ChronicleEntryLiteComponent({ entry }: ChronicleEntryLiteProps) {
           {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
         </time>
       </header>
+
+      {/* Conflict tag if detected */}
+      {conflictTag && (
+        <div className="pl-10 mb-2">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono bg-destructive/10 text-destructive border border-destructive/30">
+            <AlertTriangle className="w-3 h-3" />
+            {conflictTag}
+          </span>
+        </div>
+      )}
 
       {/* Description - always fully expanded */}
       <p className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap pl-10">

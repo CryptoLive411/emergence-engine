@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Users, GitBranch, Landmark, ScrollText, Clock } from 'lucide-react';
+import { TensionMeter } from './TensionMeter';
 
 interface WorldOverviewProps {
   population: number;
@@ -9,6 +10,11 @@ interface WorldOverviewProps {
   status: 'ACTIVE' | 'PAUSED' | 'ENDED';
   worldName: string;
   beliefs: string[];
+  recentEvents?: Array<{
+    type: string;
+    content: string;
+    metadata?: Record<string, any>;
+  }>;
 }
 
 export function WorldOverview({
@@ -19,6 +25,7 @@ export function WorldOverview({
   status,
   worldName,
   beliefs,
+  recentEvents = [],
 }: WorldOverviewProps) {
   return (
     <div className="p-5 rounded-xl border border-primary/20 bg-card/30 backdrop-blur-sm glass-card">
@@ -87,6 +94,13 @@ export function WorldOverview({
           </div>
         </div>
       </div>
+
+      {/* Tension Meter - shows world state */}
+      {recentEvents.length > 0 && (
+        <div className="mb-5">
+          <TensionMeter recentEvents={recentEvents} />
+        </div>
+      )}
 
       {/* Emerged concepts - only if inhabitants have named them */}
       {beliefs.length > 0 && (

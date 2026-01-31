@@ -1,9 +1,12 @@
 import { useMemo, useCallback, lazy, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
 import { ChronicleEntryLite } from '@/components/ChronicleEntryLite';
+import { EnhancedNamingEvent } from '@/components/EnhancedNamingEvent';
 import { WorldOverview } from '@/components/WorldOverview';
 import { WitnessPanel } from '@/components/WitnessPanel';
 import { Leaderboard } from '@/components/Leaderboard';
+import { WhatJustChanged } from '@/components/WhatJustChanged';
+import { QuoteOfTheMoment } from '@/components/QuoteOfTheMoment';
 // Lazy load heavy components to prevent initial freeze
 const WorldProgressionPanel = lazy(() => import('@/components/WorldProgressionPanel').then(m => ({ default: m.WorldProgressionPanel })));
 import { WorldSummary } from '@/components/WorldSummary';
@@ -163,6 +166,16 @@ const Index = () => {
         </div>
       </div>
 
+      {/* What Just Changed - Immediate orientation */}
+      {events.length > 0 && (
+        <WhatJustChanged recentEvents={events} />
+      )}
+
+      {/* Quote of the Moment - Viral + engaging */}
+      {events.length > 0 && agents.length > 0 && (
+        <QuoteOfTheMoment recentEvents={events} agents={agents} />
+      )}
+
       {/* Story So Far - Manual refresh only (no auto-refresh) */}
       {events.length > 0 && (
         <div className="mb-8">
@@ -202,9 +215,24 @@ const Index = () => {
                 <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-primary/50 via-border to-transparent hidden md:block" />
                 
                 <div className="space-y-3 md:pl-6">
-                  {chronicleEntries.map((entry) => (
-                    <ChronicleEntryLite key={entry.id} entry={entry} />
-                  ))}
+                  {chronicleEntries.map((entry) => {
+                    const event = events.find(e => e.id === entry.id);
+                    const agent = agents.find(a => a.id === event?.agent_id);
+                    
+                    // Show enhanced card for naming events
+                    if (event && (event.type === 'ARTIFACT_NAMED' || event.type === 'BELIEF_FORMED')) {
+                      return (
+                        <EnhancedNamingEvent 
+                          key={entry.id} 
+                          event={event} 
+                          agentName={agent?.name}
+                        />
+                      );
+                    }
+                    
+                    // Regular chronicle entry for everything else
+                    return <ChronicleEntryLite key={entry.id} entry={entry} />;
+                  })}
                   
                   {/* Load More Button */}
                   {hasMore && (
@@ -246,6 +274,7 @@ const Index = () => {
               artifacts={stats?.totalArtifacts || artifacts.length}
               entriesRecorded={stats?.totalEvents || events.length}
               beliefs={latestBriefing?.dominant_norms as string[] || []}
+              recentEvents={events}
             />
           )}
 
