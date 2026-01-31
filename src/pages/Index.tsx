@@ -11,6 +11,7 @@ import { LoadingFallback, ErrorFallback } from '@/components/LoadingFallback';
 import { useWorld, useAgents, useBriefings, useWorldControl } from '@/hooks/useSimulation';
 import { usePaginatedEvents } from '@/hooks/usePaginatedEvents';
 import { useArtifacts } from '@/hooks/useWorldMemory';
+import { useWorldStats } from '@/hooks/useWorldStats';
 import { mapEventToCategory } from '@/data/chronicleTypes';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ScrollText, Users, GitBranch, Landmark, Infinity, Loader2, BookOpen, ChevronDown } from 'lucide-react';
@@ -27,6 +28,7 @@ const Index = () => {
   const { events, isLoading: eventsLoading, hasMore, loadMore } = usePaginatedEvents(world?.id);
   const { data: briefings = [] } = useBriefings(world?.id);
   const { data: artifacts = [] } = useArtifacts(world?.id);
+  const { data: stats } = useWorldStats(world?.id);
   const { startWorld } = useWorldControl();
 
   const latestBriefing = briefings[0];
@@ -239,10 +241,10 @@ const Index = () => {
             <WorldOverview 
               worldName={world.name}
               status={world.status}
-              population={agents.length}
-              lineages={agents.filter(a => a.is_founder).length}
-              artifacts={artifacts.length}
-              entriesRecorded={events.length}
+              population={stats?.totalAgents || agents.length}
+              lineages={stats?.totalFounders || agents.filter(a => a.is_founder).length}
+              artifacts={stats?.totalArtifacts || artifacts.length}
+              entriesRecorded={stats?.totalEvents || events.length}
               beliefs={latestBriefing?.dominant_norms as string[] || []}
             />
           )}
