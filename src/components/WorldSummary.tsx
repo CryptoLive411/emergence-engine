@@ -47,9 +47,16 @@ function WorldSummaryComponent() {
     }
   }, []);
 
-  // Always fetch fresh on mount
+  // Fetch on mount and auto-refresh every 10 minutes
   useEffect(() => {
     fetchSummary();
+    
+    // Auto-refresh every 10 minutes (600,000ms)
+    const interval = setInterval(() => {
+      fetchSummary(true);
+    }, 600000);
+    
+    return () => clearInterval(interval);
   }, [fetchSummary]);
 
   if (isLoading) {
