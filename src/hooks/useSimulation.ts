@@ -65,20 +65,34 @@ export interface Turn {
 }
 
 // Fetch the current world - heavily cached for high traffic
+// Priority: ACTIVE first, then PAUSED, then most recently created
 export function useWorld() {
   return useQuery({
     queryKey: ['world'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try to get an ACTIVE world
+      const { data: activeWorld, error: activeError } = await supabase
         .from('worlds')
         .select('*')
-        .in('status', ['ACTIVE', 'PAUSED'])
+        .eq('status', 'ACTIVE')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as World | null;
+      if (activeError && activeError.code !== 'PGRST116') throw activeError;
+      if (activeWorld) return activeWorld as World;
+      
+      // Fall back to PAUSED world
+      const { data: pausedWorld, error: pausedError } = await supabase
+        .from('worlds')
+        .select('*')
+        .eq('status', 'PAUSED')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (pausedError && pausedError.code !== 'PGRST116') throw pausedError;
+      return pausedWorld as World | null;
     },
     staleTime: 30000, // Data stays fresh for 30 seconds
     refetchInterval: 30000, // Refresh every 30 seconds to keep stats updated
@@ -350,6 +364,7 @@ export function useWorldControl() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['briefings'] });
       queryClient.invalidateQueries({ queryKey: ['current-turn'] });
+      queryClient.invalidateQueries({ queryKey: ['artifacts'] });
       toast.success(`Turn ${data.turn} complete: ${data.events} events, ${data.newAgents} new agents`);
     },
     onError: (error: Error) => {
@@ -425,6 +440,7 @@ export function useWorldControl() {
       queryClient.invalidateQueries({ queryKey: ['briefings'] });
       queryClient.invalidateQueries({ queryKey: ['current-turn'] });
       queryClient.invalidateQueries({ queryKey: ['world-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['artifacts'] });
       toast.success(data.message || 'Turbo burst complete!');
     },
     onError: (error: Error) => {
