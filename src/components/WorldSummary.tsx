@@ -17,7 +17,7 @@ interface SummaryData {
 }
 
 const CACHE_KEY = 'molt_world_summary';
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 function WorldSummaryComponent() {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);

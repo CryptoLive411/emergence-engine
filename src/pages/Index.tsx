@@ -21,7 +21,7 @@ import { useArtifacts } from '@/hooks/useWorldMemory';
 import { useWorldStats } from '@/hooks/useWorldStats';
 import { mapEventToCategory } from '@/data/chronicleTypes';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ScrollText, Users, GitBranch, Landmark, Infinity, Loader2, BookOpen, ChevronDown } from 'lucide-react';
+import { ArrowRight, ScrollText, Users, GitBranch, Landmark, Infinity, Loader2, BookOpen, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';

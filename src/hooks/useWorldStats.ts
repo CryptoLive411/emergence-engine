@@ -55,7 +55,7 @@ export function useWorldStats(worldId?: string) {
     },
     enabled: !!worldId,
     staleTime: 300000, // 5 minutes
-    refetchInterval: false, // Auto-refresh disabled for stability
+    refetchInterval: 600000, // Auto-refresh every 10 minutes
     refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
