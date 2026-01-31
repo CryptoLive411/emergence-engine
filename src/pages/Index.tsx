@@ -7,6 +7,10 @@ import { WitnessPanel } from '@/components/WitnessPanel';
 import { Leaderboard } from '@/components/Leaderboard';
 import { WhatJustChanged } from '@/components/WhatJustChanged';
 import { QuoteOfTheMoment } from '@/components/QuoteOfTheMoment';
+import { RelationshipGraph } from '@/components/RelationshipGraph';
+import { EventTimeline } from '@/components/EventTimeline';
+import { ActivityHeatmap } from '@/components/ActivityHeatmap';
+import { ConceptMap } from '@/components/ConceptMap';
 // Lazy load heavy components to prevent initial freeze
 const WorldProgressionPanel = lazy(() => import('@/components/WorldProgressionPanel').then(m => ({ default: m.WorldProgressionPanel })));
 import { WorldSummary } from '@/components/WorldSummary';
@@ -185,6 +189,37 @@ const Index = () => {
             <h2 className="font-display font-semibold text-foreground tracking-wide">New Here? Start With The Story</h2>
           </div>
           <WorldSummary />
+        </div>
+      )}
+
+      {/* Visual Analytics Section */}
+      {events.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="font-display font-semibold text-foreground tracking-wide">Visual Overview</h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Relationship Network */}
+            {agents.length > 0 && (
+              <RelationshipGraph agents={agents} events={events} />
+            )}
+
+            {/* Activity Heatmap */}
+            <ActivityHeatmap events={events} />
+
+            {/* Event Timeline */}
+            <EventTimeline events={events} limit={8} />
+
+            {/* Concept Map */}
+            {(latestBriefing?.dominant_norms?.length || artifacts.length > 0) && (
+              <ConceptMap 
+                beliefs={latestBriefing?.dominant_norms as string[] || []}
+                artifacts={artifacts}
+              />
+            )}
+          </div>
         </div>
       )}
 
