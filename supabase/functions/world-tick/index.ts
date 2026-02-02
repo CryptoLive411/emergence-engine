@@ -34,11 +34,31 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication: Require TICK_SECRET for all tick requests
-    const tickSecret = Deno.env.get('TICK_SECRET');
-    if (!tickSecret) {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authentication: accept either env TICK_SECRET or the DB-stored internal tick secret.
+    // (DB secret is used by the scheduler; env secret is kept for backward compatibility.)
+    const envTickSecret = Deno.env.get('TICK_SECRET') || null;
+    let dbTickSecret: string | null = null;
+
+    try {
+      const { data } = await supabase
+        .from('internal_secrets')
+        .select('value')
+        .eq('key', 'tick_secret')
+        .maybeSingle();
+      dbTickSecret = data?.value ?? null;
+    } catch (e) {
+      console.error('Failed to read internal tick secret:', e);
+    }
+
+    const validSecrets = [envTickSecret, dbTickSecret].filter(Boolean) as string[];
+    if (validSecrets.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'TICK_SECRET not configured' }),
+        JSON.stringify({ error: 'Tick secret not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -46,7 +66,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const providedSecret = body.tickSecret;
 
-    if (providedSecret !== tickSecret) {
+    if (!providedSecret || !validSecrets.includes(providedSecret)) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized', message: 'Invalid or missing tick secret' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -68,12 +88,6 @@ serve(async (req) => {
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Get the active world
     const { data: world, error: worldError } = await supabase
       .from('worlds')
