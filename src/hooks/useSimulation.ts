@@ -96,6 +96,7 @@ export function useWorld() {
     },
     staleTime: 300000, // Data stays fresh for 5 minutes
     refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
+    refetchIntervalInBackground: true,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -141,6 +142,7 @@ export function useAgents(worldId?: string) {
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
     refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
+    refetchIntervalInBackground: true,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -206,6 +208,7 @@ export function useEvents(worldId?: string, limit = 50) {
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
     refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
+    refetchIntervalInBackground: true,
     retry: 3,
   });
 }
@@ -251,6 +254,7 @@ export function useBriefings(worldId?: string) {
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
     refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
+    refetchIntervalInBackground: true,
     retry: 3,
   });
 }
@@ -297,6 +301,7 @@ export function useCurrentTurn(worldId?: string) {
     enabled: !!worldId,
     staleTime: 300000, // Data stays fresh for 5 minutes
     refetchInterval: 600000, // Auto-refresh every 10 minutes to match simulation tick
+    refetchIntervalInBackground: true,
     retry: 3,
   });
 }

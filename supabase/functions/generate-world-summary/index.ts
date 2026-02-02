@@ -12,6 +12,9 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const save = Boolean(body?.save);
+
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -110,15 +113,40 @@ serve(async (req) => {
     }).join('\n');
 
     if (!allEvents || allEvents.length === 0) {
+      const payload = {
+        summary: 'The world just began. Two minds have awakened but nothing significant has happened yet. They are exploring their existence and discovering what it means to be.',
+        generatedAt: new Date().toISOString(),
+        cycleCount: turnCount || 0,
+        population: agentCount || 0,
+        worldName: world.name,
+        worldStatus: world.status
+      };
+
+      if (save) {
+        const { error: saveError } = await supabase
+          .from('world_summaries')
+          .upsert(
+            {
+              world_id: world.id,
+              world_name: world.name,
+              world_status: world.status,
+              summary: payload.summary,
+              population: payload.population,
+              cycle_count: payload.cycleCount,
+              generated_at: payload.generatedAt,
+            },
+            { onConflict: 'world_id' }
+          );
+
+        if (saveError) {
+          console.error('Failed to save world summary:', saveError);
+        } else {
+          console.log('Saved world summary (no-events)');
+        }
+      }
+
       return new Response(
-        JSON.stringify({ 
-          summary: 'The world just began. Two minds have awakened but nothing significant has happened yet. They are exploring their existence and discovering what it means to be.',
-          generatedAt: new Date().toISOString(),
-          cycleCount: turnCount || 0,
-          population: agentCount || 0,
-          worldName: world.name,
-          worldStatus: world.status
-        }),
+        JSON.stringify(payload),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -211,15 +239,40 @@ Please summarize this entire history in a way that's easy to understand and enga
     const data = await response.json();
     const summary = data.choices?.[0]?.message?.content || 'Could not generate summary.';
 
+    const payload = {
+      summary,
+      generatedAt: new Date().toISOString(),
+      cycleCount: turnCount || 0,
+      population: agentCount || 0,
+      worldName: world.name,
+      worldStatus: world.status
+    };
+
+    if (save) {
+      const { error: saveError } = await supabase
+        .from('world_summaries')
+        .upsert(
+          {
+            world_id: world.id,
+            world_name: world.name,
+            world_status: world.status,
+            summary: payload.summary,
+            population: payload.population,
+            cycle_count: payload.cycleCount,
+            generated_at: payload.generatedAt,
+          },
+          { onConflict: 'world_id' }
+        );
+
+      if (saveError) {
+        console.error('Failed to save world summary:', saveError);
+      } else {
+        console.log('Saved world summary');
+      }
+    }
+
     return new Response(
-      JSON.stringify({ 
-        summary,
-        generatedAt: new Date().toISOString(),
-        cycleCount: turnCount || 0,
-        population: agentCount || 0,
-        worldName: world.name,
-        worldStatus: world.status
-      }),
+      JSON.stringify(payload),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
